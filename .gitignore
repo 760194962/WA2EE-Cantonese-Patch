@@ -1,0 +1,12 @@
+# game data, subtitles, fonts and builds are never committed
+WHITE ALBUM2*/
+ic_ass/
+fonts/
+work/
+output/
+__pycache__/
+*.pak
+*.exe
+*.tga
+config.json
+backup_original/
