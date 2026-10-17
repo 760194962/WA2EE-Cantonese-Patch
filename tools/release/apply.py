@@ -2,9 +2,9 @@
 """WHITE ALBUM2 EXTENDED EDITION (PC) Cantonese patch - user-side patcher. Only the Python standard library is used.
     python patch/apply.py  <game folder>           install
     python patch/apply.py --undo <game folder>     put the original files back
-<game folder> is the folder holding "WHITE ALBUM2" and "WHITE ALBUM2 Special Contents" (or either of those itself).
+<game folder>: the install folder, or "WHITE ALBUM2" and/or "WHITE ALBUM2 Special Contents" (one or both, any order).
 Originals are copied to <each game folder>/粵語補丁備份/ before anything is written."""
-import os, sys, struct, json, hashlib, lzma, shutil
+import os, sys, re, struct, json, hashlib, lzma, shutil
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BACKUP = "粵語補丁備份"
@@ -103,22 +103,35 @@ def tga_patch(t, height, cell, idx, pix):
     return bytes(head) + b"".join(out_rows)
 
 # ---------------- main ----------------
-def find_games(root, meta):
+def find_games(roots, meta):
+    """each dragged path may be the install folder or either game folder: look in it, below it and beside it"""
     found = {}
-    for which, g in meta["games"].items():
-        for cand in (os.path.join(root, g["folder"]), root):
-            if os.path.isfile(os.path.join(cand, g["exe"])): found[which] = cand; break
+    for root in roots:
+        root = os.path.abspath(root)
+        for which, g in meta["games"].items():
+            for cand in (root, os.path.join(root, g["folder"]), os.path.join(os.path.dirname(root), g["folder"])):
+                if which not in found and os.path.isfile(os.path.join(cand, g["exe"])): found[which] = cand
     return found
+
+def dragged_paths(args):
+    """paths from the command line and from WA2EE_GAME (what was dragged into the window: one or more paths,
+    quoted when they contain spaces); an unquoted path with spaces is also tried whole"""
+    raw = " ".join(args + [os.environ.get("WA2EE_GAME", "")]).strip()
+    out = [a or b for a, b in re.findall(r'"([^"]+)"|(\S+)', raw)]
+    whole = raw.replace('"', "").strip()
+    if whole and whole not in out: out.append(whole)
+    return [p for p in out if os.path.isdir(p)]
 
 def main():
     args = [a for a in sys.argv[1:] if a]
     undo = "--undo" in args; args = [a for a in args if a != "--undo"]
-    if not args: die("請將遊戲文件夾拖入視窗")
-    root = args[0].strip().strip('"')
+    roots = dragged_paths(args)
+    if not roots: die("搵唔到你拖入嘅文件夾，請再試一次")
+    root = "、".join(roots)
     d = open(os.path.join(HERE, "patch.dat"), "rb").read()
     if d[:7] != b"WA2EEP1": die("patch.dat 格式唔啱")
     hl = struct.unpack("<I", d[7:11])[0]; meta = json.loads(d[11:11 + hl].decode("utf-8"))
-    games = find_games(root, meta)
+    games = find_games(roots, meta)
     if not games: die("喺「%s」搵唔到 WA2.exe 或者 WA2_Special.exe" % root)
     def state(gdir, g):
         """'orig' / 'patched' / None per file"""

@@ -106,8 +106,7 @@ README = """WHITE ALBUM2 EXTENDED EDITION（PC）粵語化補丁 {ver}（測試�
 安裝：
   1. 雙擊「安裝補丁.bat」
   2. 將遊戲安裝文件夾拖入個黑色視窗，再按 Enter
-     （即係入面有「WHITE ALBUM2」同「WHITE ALBUM2 Special Contents」嘅文件夾；
-       直接拖「WHITE ALBUM2」文件夾都得）
+     （即係「WHITE ALBUM2」同「WHITE ALBUM2 Special Contents」兩個文件夾）
   3. 見到「完成」就可以開遊戲
 
 還原：雙擊「還原原版.bat」，一樣拖入遊戲文件夾。原版檔案備份喺遊戲文件夾入面嘅「粵語補丁備份」。
@@ -132,10 +131,10 @@ if not defined PY (
   )
 )
 if not defined PY ( echo [錯誤] 搵唔到 Python 3，請先安裝 python.org 嘅 Python 3。 & goto :end )
-set "GAME=%~1"
+set "GAME=%*"
 if not defined GAME set /p "GAME=請將遊戲文件夾拖入呢個視窗，然後按 Enter: "
-set "GAME=%GAME:"=%"
-%PY% "%BASE%patch\apply.py" {args} "%GAME%"
+set "WA2EE_GAME=%GAME%"
+%PY% "%BASE%patch\apply.py" {args}
 :end
 echo.
 pause
